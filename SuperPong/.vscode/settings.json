@@ -1,0 +1,23 @@
+{
+    "files.associations": {
+        "istream": "c",
+        "ostream": "c"
+    },
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/Proj/SuperPong",
+            "binaryPath": "/home/Proj/SuperPong/CLIENT.proj",
+            "binaryArgs": []
+        },
+        {
+            "cwd": "/home/SuperPong",
+            "binaryPath": "/home/SuperPong/SERVER.proj",
+            "binaryArgs": []
+        },
+        {
+            "cwd": "/home/SuperPong",
+            "binaryPath": "/home/SuperPong/CLIENT.proj",
+            "binaryArgs": []
+        }
+    ]
+}

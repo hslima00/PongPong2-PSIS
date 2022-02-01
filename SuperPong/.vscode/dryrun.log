@@ -1,0 +1,8 @@
+make default --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/SuperPong'
+gcc -g -Wall -pedantic -Wextra -c server.c -o server.o -lcurses -lncurses
+gcc -g  -Wall -pedantic -Wextra -o SERVER.proj  server.o  -lcurses -lncurses
+gcc -g -Wall -pedantic -Wextra -c client.c -o client.o -lcurses -lncurses
+gcc -g -L. -Wall -pedantic -Wextra -o CLIENT.proj client.o -lcurses -lncurses
+make: Leaving directory '/home/SuperPong'
+ 
