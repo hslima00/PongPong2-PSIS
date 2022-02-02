@@ -1,11 +1,14 @@
 #include "header.h"
 
+
+
 /* creates the socket to with the correct type (AF_INET) use and checks if the creation was sucessful */ 
 void criar_socket(int * sock_fd) {
   * sock_fd = socket(AF_INET, SOCK_DGRAM, 0); //creates the socket
   if ( * sock_fd == -1) { //checks if the creation was sucessful
     perror("socket: ");
     exit(-1);
+    
   }
 
 }
@@ -20,7 +23,8 @@ void initialize_ncurses() {
 }
 
 /* creates the 4  used windows and draws a border for each  each window has it's own purpose, see declaration*/
-void create_windows(WINDOW * my_win, WINDOW * message_win, WINDOW * score_win, WINDOW * controls_and_info) {
+void create_windows(WINDOW * my_win, WINDOW * message_win, WINDOW * score_win, WINDOW * controls_and_info, pthread_mutex_t mux_curses) {
+  pthread_mutex_lock(&mux_curses);
   box(my_win, 0, 0);
   wrefresh(my_win);
   keypad(my_win, true);
@@ -35,6 +39,7 @@ void create_windows(WINDOW * my_win, WINDOW * message_win, WINDOW * score_win, W
   mvwprintw(controls_and_info, 3, 1, "Press \tq to leave the game  ");
   mvwprintw(controls_and_info, 4, 1, "Press \tr to release the ball after at least 10 secs ");
   wrefresh(controls_and_info);
+  pthread_mutex_unlock(&mux_curses);   
 }
 
 /*initial paddle position*/
@@ -46,6 +51,7 @@ void new_paddle(paddle_position * paddle, int length) {
 
 /*draws or deletes the paddle given in the main my_win(my_win)  */
 void draw_paddle(WINDOW * my_win, paddle_position * paddle, int draw) {
+
   int ch;
   if (draw) {
     ch = '=';
@@ -258,11 +264,14 @@ void start_play_state(WINDOW * my_win, paddle_position * paddle, message * m, WI
 }
 
 /*routine for success connection*/
-void connect_message(WINDOW * message_win) {
+void connect_message(WINDOW * message_win, pthread_mutex_t mux_curses) {
+   pthread_mutex_lock(&mux_curses);
   mvwprintw(message_win, 1, 1, "SUCESS IN CONNECTION WAIT \0");
   wrefresh(message_win);
   mvwprintw(message_win, 1, 1, "                                        \0");
+  pthread_mutex_unlock(&mux_curses);
 }
+
 
 /* routine to delete and redraw ball*/
 void movement_message(WINDOW * my_win, message * m) {
@@ -286,6 +295,9 @@ int main(int argc, char * argv[]) {
   paddle_position paddle;
   struct sockaddr_in server_addr;
   criar_socket( & sock_fd);
+
+  //define safe thread to use ncurses
+  pthread_mutex_t mux_curses;
 
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(SOCK_PORT);
@@ -314,14 +326,16 @@ int main(int argc, char * argv[]) {
   do {
     recv(sock_fd, & m, sizeof(message), 0);
     if (m.msg_type == 5) {
+      //pthread_mutex_lock(&mux_curses);
       mvwprintw(max_player_win, 1, 1, "MAX PLAYER NUMBER EXCEEDED, PROCESS WILL BE KILLED IN 5s");
       wrefresh(max_player_win);
+      //pthread_mutex_unlock(&mux_curses); 
       sleep(5);
       break;
     }
-    create_windows(my_win, message_win, score_win, controls_and_info);
+    create_windows(my_win, message_win, score_win, controls_and_info, mux_curses);
     if (m.msg_type == 0) {
-      connect_message(message_win);
+      connect_message(message_win, mux_curses);
       continue;
     }
 

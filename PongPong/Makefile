@@ -43,15 +43,15 @@ CLIENT: $(CLIENT_NAME)
 # Compilacao e geracao de executaveis                               
 ################################################################################
 $(SERVER_NAME):  $(SERVER_OBJS) 
-	$(CC) $(MODE)  $(CFLAGS) -o $@  $(SERVER_OBJS) -lcurses -lncurses 
+	$(CC) $(MODE)  $(CFLAGS) -o $@  $(SERVER_OBJS) -lcurses -lncurses -lpthread
 
 $(CLIENT_NAME):  $(CLIENT_OBJS)
-	$(CC) $(MODE) -L. $(CFLAGS) -o $@ $(CLIENT_OBJS) -lcurses -lncurses
+	$(CC) $(MODE) -L. $(CFLAGS) -o $@ $(CLIENT_OBJS) -lcurses -lncurses -lpthread
 server.o: $(SERVER_SOURCES)
-	$(CC) $(MODE) $(CFLAGS) -c $< -o $@ -lcurses -lncurses
+	$(CC) $(MODE) $(CFLAGS) -c $< -o $@ -lcurses -lncurses -lpthread
 
 client.o: $(CLIENT_SOURCES)
-	$(CC) $(MODE) $(CFLAGS) -c $< -o $@ -lcurses -lncurses
+	$(CC) $(MODE) $(CFLAGS) -c $< -o $@ -lcurses -lncurses -lpthread
 
 
 ################################################################################

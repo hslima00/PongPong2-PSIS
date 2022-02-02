@@ -10,6 +10,7 @@
 #include<arpa/inet.h>
 #include <ncurses.h>
 #include  <time.h>
+#include <pthread.h>
 
 #define SOCK_PORT 6969
 #define MAX_CLIENTS 3
