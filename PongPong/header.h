@@ -51,7 +51,7 @@ typedef struct update_ball_t{
     paddle_position *paddle; //= &paddle
     bool play_state;
     int *scores; //= int * scores 
-    pthread_mutex_t * mux_curses;
+    //pthread_mutex_t * mux_curses;
 }update_ball_t;
 
 typedef struct quit_t{ 
@@ -60,7 +60,7 @@ typedef struct quit_t{
     WINDOW * my_win;
     int * sock_fd;
     int * key;
-    pthread_mutex_t * mux_curses;
+    //pthread_mutex_t * mux_curses;
 }quit_t;
 
 typedef struct player_changer_t{

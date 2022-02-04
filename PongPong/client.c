@@ -1,6 +1,26 @@
 #include "header.h"
 
+pthread_mutex_t mux_curses;
+/*thread safety */
+void safe_waddch(WINDOW * win, int pos_x, int pos_y, int ch){
 
+    pthread_mutex_lock(&mux_curses);    
+        wmove(win, pos_y, pos_x);
+        waddch(win,ch);   
+        wrefresh(win);
+    pthread_mutex_unlock(&mux_curses);    
+
+}
+
+
+void safe_mvwprintw(WINDOW * win, int pos_y, int pos_x, char * str){
+    pthread_mutex_lock(&mux_curses); 
+    mvwprintw(win, pos_y,pos_x,str);
+    wrefresh(win);
+    pthread_mutex_unlock(&mux_curses);    
+}
+
+/*thread safety*/
 
 /* creates the socket to with the correct type (AF_INET) use and checks if the creation was sucessful */ 
 void criar_socket(int * sock_fd) {
@@ -62,41 +82,37 @@ void draw_paddle(WINDOW * my_win, paddle_position * paddle, int draw) {
   int end_x = paddle -> x + paddle -> length;
   for (int x = start_x; x <= end_x; x++) {// draws the ch on the  window making the paddle from the left edge to the right edge
   
-    wmove(my_win, paddle -> y, x);
-    waddch(my_win, ch);
+    safe_waddch(my_win,x,paddle -> y, ch);
   }
-  wrefresh(my_win);
 }
 
 /* moves the paddle checking if the move  is valid */
 void move_paddle(paddle_position * paddle, int direction, WINDOW * message_win) {
-  mvwprintw(message_win, 3, 1, "                        ");
-  wrefresh(message_win);
+  safe_mvwprintw(message_win, 3, 1, "                        ");
   if (direction == KEY_UP || direction == 'w') {
     if (paddle -> y != 1) {
       paddle -> y--;
-      mvwprintw(message_win, 3, 1, "UP movement\0");
-    } else mvwprintw(message_win, 3, 1, "Hitting BOX limit\0");
+      safe_mvwprintw(message_win, 3, 1, "UP movement\0");
+    } else safe_mvwprintw(message_win, 3, 1, "Hitting BOX limit\0");
   }
   if (direction == KEY_DOWN || direction == 's') {
     if (paddle -> y != WINDOW_SIZE - 2) {
       paddle -> y++;
-      mvwprintw(message_win, 3, 1, "DOWN movement\0");
-    } else mvwprintw(message_win, 3, 1, "Hitting BOX limit\0");
+      safe_mvwprintw(message_win, 3, 1, "DOWN movement\0");
+    } else safe_mvwprintw(message_win, 3, 1, "Hitting BOX limit\0");
   }
   if (direction == KEY_LEFT || direction == 'a') {
     if (paddle -> x - paddle -> length != 1) {
       paddle -> x--;
-      mvwprintw(message_win, 3, 1, "LEFT movement\0");
-    } else mvwprintw(message_win, 3, 1, "Hitting BOX limit\0");
+      safe_mvwprintw(message_win, 3, 1, "LEFT movement\0");
+    } else safe_mvwprintw(message_win, 3, 1, "Hitting BOX limit\0");
   }
   if (direction == KEY_RIGHT || direction == 'd') {
     if (paddle -> x + paddle -> length != WINDOW_SIZE - 2) {
       paddle -> x++;
-      mvwprintw(message_win, 3, 1, "RIGHT movement\0");
-    } else mvwprintw(message_win, 3, 1, "Hitting BOX limit\0");
+      safe_mvwprintw(message_win, 3, 1, "RIGHT movement\0");
+    } else safe_mvwprintw(message_win, 3, 1, "Hitting BOX limit\0");
   }
-  wrefresh(message_win);
 }
 
 /*moves the ball   simulating bouncing effect on walls*/
@@ -128,56 +144,58 @@ void draw_ball(WINDOW * my_win, ball_position_t * ball, int draw) {
   } else {
     ch = ' ';
   }
-  wmove(my_win, ball -> y, ball -> x);
-  waddch(my_win, ch);
+  safe_waddch(my_win,ball->x ,ball->y,ch);
 }
  /* simulates ball position to check if hitting edges or paddle and bouncing accordingly */
 void simulate_ball_position(paddle_position * paddle, message * m, WINDOW * message_win, int * scores) {
- 
-  ball_position_t simul_ball;
-  simul_ball.c = m -> ball_position.c;
-  simul_ball.left_ver_right = m -> ball_position.left_ver_right;
-  simul_ball.up_hor_down = m -> ball_position.up_hor_down;
-  simul_ball.x = m -> ball_position.x;
-  simul_ball.y = m -> ball_position.y;
-  move_ball( & simul_ball);
+  ball_position_t* simul_ball;
+  simul_ball =  malloc (sizeof (ball_position_t));
+  simul_ball->c = m -> ball_position.c;
+  simul_ball->left_ver_right = m -> ball_position.left_ver_right;
+  simul_ball->up_hor_down = m -> ball_position.up_hor_down;
+  simul_ball->x = m -> ball_position.x;
+  simul_ball->y = m -> ball_position.y;
+  move_ball(  simul_ball);
 
-  int condition_1 = (((simul_ball.x <= paddle -> x + paddle -> length) && (simul_ball.x >= paddle -> x - paddle -> length)) );
+  int condition_1 = (((simul_ball->x <= paddle -> x + paddle -> length) && (simul_ball->x >= paddle -> x - paddle -> length)) );
   if (condition_1 ) {
-    if(paddle -> y == simul_ball.y){
+    if(paddle -> y == simul_ball->y){
       scores[0]++;
       m->point =TRUE;
-      if( simul_ball.x == WINDOW_SIZE -2 || simul_ball.x == 1){//left or right
-        if(simul_ball.y <= WINDOW_SIZE/2)m->ball_position.up_hor_down=1;
+      if( simul_ball->x == WINDOW_SIZE -2 || simul_ball->x == 1){//left or right
+        if(simul_ball->y <= WINDOW_SIZE/2)m->ball_position.up_hor_down=1;
         else m->ball_position.up_hor_down=-1;
-        if (simul_ball.x == WINDOW_SIZE -2 ) m->ball_position.left_ver_right =1;
+        if (simul_ball->x == WINDOW_SIZE -2 ) m->ball_position.left_ver_right =1;
         else m->ball_position.left_ver_right =-1;
       } 
       else  m->ball_position.left_ver_right *=-1;
       m->ball_position.y += m-> ball_position.up_hor_down;
       m->ball_position.x += m-> ball_position.left_ver_right;
     }
-    if ((paddle -> y == WINDOW_SIZE -3 )&& (simul_ball.y == WINDOW_SIZE -2)){
+    if ((paddle -> y == WINDOW_SIZE -3 )&& (simul_ball->y == WINDOW_SIZE -2)){
       m -> ball_position.y = WINDOW_SIZE -4;
       m -> ball_position.up_hor_down = -1;
     }
-    else if ((paddle -> y == 2) && (simul_ball.y == 1)){
+    else if ((paddle -> y == 2) && (simul_ball->y == 1)){
       m -> ball_position.y = 3;
       m -> ball_position.up_hor_down = 1;
     } 
     
   }  
-  else if (simul_ball.y == paddle -> y && !(simul_ball.up_hor_down == 0)) scores[1]++;
+  else if (simul_ball->y == paddle -> y && !(simul_ball->up_hor_down == 0)) scores[1]++;
+ 
+  pthread_mutex_lock(&mux_curses);   
   mvwprintw(message_win, 2, 1, "SCORED - %d \t|\tMISSED - %d", scores[0], scores[1]);
   wrefresh(message_win);
+  pthread_mutex_unlock(&mux_curses);
+  free(simul_ball);
 }
 /*updates the score board being printed in the score_win (score_win)on the right side of the main win(my_win*/
 void update_scoreboard(int score[], WINDOW * score_win) {
   int temp_score[MAX_CLIENTS], temp_max = 0, k = 0, clt_on_score = -1;
   for (int j = 0; j < MAX_CLIENTS; j++) {
     temp_score[j] = -1;
-    mvwprintw(score_win, j + 2, 1, "                      \0");
-    wrefresh(score_win);
+    safe_mvwprintw(score_win, j + 2, 1, "                      \0");
     if (score[clt_on_score + 1] != -1) {
       ++clt_on_score;
       temp_score[clt_on_score] = score[clt_on_score];
@@ -190,11 +208,14 @@ void update_scoreboard(int score[], WINDOW * score_win) {
         k = j;
       }
     }
+    pthread_mutex_lock(&mux_curses);   
     mvwprintw(score_win, l + 2, 1, " %dº | PLAYER %d |%d\0 ", l + 1, k, temp_score[k]);
     wrefresh(score_win);
+    pthread_mutex_unlock(&mux_curses);
     temp_score[k] = -1;
     temp_max = 0;
   }
+  
 
 }
 
@@ -204,22 +225,24 @@ void update_paddle(WINDOW * my_win, paddle_position * paddle, int key, WINDOW * 
   move_paddle(paddle, key, message_win); //calculates new paddle position according to user input
   //if it does, changes direction of ball
   draw_paddle(my_win, paddle, TRUE);
+  pthread_mutex_lock(&mux_curses);
   wrefresh(my_win);
+  wrefresh(message_win);
+  pthread_mutex_unlock(&mux_curses);
 } //delete previous ball, calculate new position and draws it 
 
 void * update_ball_thread(void* arg){
   update_ball_t *update_ball_struct = (update_ball_t*) arg;
+  
   //update_ball_t *update_ball_struct = malloc(sizeof(*update_ball_t));
   // malloc
   here:
   sleep(1);
-  if (update_ball_struct->play_state == TRUE){
-    pthread_mutex_lock(update_ball_struct->mux_curses);
+  if (update_ball_struct->play_state == TRUE){ 
     draw_ball(update_ball_struct->my_win, &update_ball_struct->m->ball_position, FALSE); //deletes ball   
     simulate_ball_position(update_ball_struct->paddle, update_ball_struct->m, update_ball_struct->message_win, update_ball_struct->scores); //simulates if ball will hit paddle or not,
     move_ball( &update_ball_struct->m->ball_position);
     draw_ball(update_ball_struct->my_win, &update_ball_struct->m->ball_position, TRUE);
-    pthread_mutex_unlock(update_ball_struct->mux_curses);
   }
   else {goto here;}
   return NULL;
@@ -229,10 +252,10 @@ void * quit_func(void* arg){
   quit_t *quit_struct = (quit_t *) arg;
   //malloc 
   int key;
-  pthread_mutex_lock(quit_struct->mux_curses);
-  while((key = wgetch(quit_struct->my_win)) == ERR){
+  pthread_mutex_lock(&mux_curses);
+  while((key = mvwgetch((quit_struct->my_win),1,1)) == ERR){//mudei to test
     if(key == 'q'){ 
-      pthread_mutex_unlock(quit_struct->mux_curses);
+      pthread_mutex_unlock(&mux_curses);
       quit_struct->m->msg_type = 4; // disconnect message
       sendto(*quit_struct->sock_fd, & quit_struct->m , sizeof(message), 0,
           (const struct sockaddr * ) & quit_struct->server_addr,  sizeof(quit_struct->server_addr)); //send the move ball message
@@ -242,7 +265,7 @@ void * quit_func(void* arg){
     }
     else {
       *quit_struct->key= key;
-      pthread_mutex_unlock(quit_struct->mux_curses);
+      pthread_mutex_unlock(&mux_curses);
       sleep(0.1);}
   }
   return NULL;
@@ -250,38 +273,48 @@ void * quit_func(void* arg){
 
 // if released clears message window 
 void clear_paddle_nd_msg_window(WINDOW * my_win, paddle_position * paddle, WINDOW * message_win) {
+  
   draw_paddle(my_win, paddle, FALSE);
+  pthread_mutex_lock(&mux_curses);
   mvwprintw(message_win, 1, 1, "                                        \0");
   mvwprintw(message_win, 2, 1, "                                        \0");
   mvwprintw(message_win, 3, 1, "                                        \0");
   mvwprintw(message_win, 4, 1, "                                        \0");
+  pthread_mutex_unlock(&mux_curses);
 }
 
 /*routine to start playe state*/
 void start_play_state(WINDOW * my_win, paddle_position * paddle, message * m, WINDOW * message_win) {
-  mvwprintw(message_win, 1, 1, "PLAY STATE");
+  
   draw_paddle(my_win, paddle, TRUE); // draws paddle in the defined position (mode TRUE=draw/ mode FALSE= delete)
   draw_ball(my_win, & m -> ball_position, TRUE);
+  pthread_mutex_lock(&mux_curses);
+  mvwprintw(message_win, 1, 1, "PLAY STATE");
   wrefresh(my_win);
   wrefresh(message_win);
+  pthread_mutex_unlock(&mux_curses);
   m -> point = FALSE;
   //m -> msg_type = 3;
 }
 
 /*routine for success connection*/
 void connect_message(WINDOW * message_win) {
+  pthread_mutex_lock(&mux_curses);
   mvwprintw(message_win, 1, 1, "SUCESS IN CONNECTION WAIT \0");
   wrefresh(message_win);
   mvwprintw(message_win, 1, 1, "                                        \0");
+  pthread_mutex_unlock(&mux_curses);
 }
 
 
 /* routine to delete and redraw ball*/
 void movement_message(WINDOW * my_win, message * m) {
+  //pthread_mutex_lock(&mux_curses);
   wrefresh(my_win);
   draw_ball(my_win, & m -> ball_position, TRUE);
   wrefresh(my_win);
   draw_ball(my_win, & m -> ball_position, FALSE);
+  //pthread_mutex_unlock(&mux_curses);
 }
 
 int main(/*int argc, char * argv[]*/) {
@@ -304,7 +337,8 @@ int main(/*int argc, char * argv[]*/) {
   criar_socket( & sock_fd);
 
   //define safe thread to use ncurses
-  pthread_mutex_t mux_curses = PTHREAD_MUTEX_INITIALIZER;
+  
+  pthread_mutex_init(&mux_curses, NULL);
   pthread_t ball_thread,quit_thread;
   update_ball_t update_ball_struct;
   quit_t quit_struct;
@@ -336,21 +370,18 @@ int main(/*int argc, char * argv[]*/) {
   nodelay(my_win, TRUE);
   update_ball_struct.m= &m;
   update_ball_struct.message_win = message_win;
-  update_ball_struct.mux_curses = &mux_curses;
+  
   update_ball_struct.my_win = my_win;
   update_ball_struct.paddle = & paddle;
   update_ball_struct.scores= scores;
-  quit_struct.mux_curses = &mux_curses;
+  
   update_ball_struct.play_state =FALSE;
   
  
   do {
     recv(sock_fd, & m, sizeof(message), 0);
     if (m.msg_type == 5) {
-      //pthread_mutex_lock(&mux_curses);
-      mvwprintw(max_player_win, 1, 1, "MAX PLAYER NUMBER EXCEEDED, PROCESS WILL BE KILLED IN 5s");
-      wrefresh(max_player_win);
-      //pthread_mutex_unlock(&mux_curses); 
+      safe_mvwprintw(max_player_win, 1, 1, "MAX PLAYER NUMBER EXCEEDED, PROCESS WILL BE KILLED IN 5s");
       sleep(5);
       break;
     }
@@ -390,7 +421,7 @@ int main(/*int argc, char * argv[]*/) {
 
       sendto(sock_fd, & m, sizeof(message), 0,
         (const struct sockaddr * ) & server_addr, sizeof(server_addr)); //send the move ball message
-      wrefresh(message_win);
+      //wrefresh(message_win);
       break;
     case 3: //move_ball
       update_ball_struct.play_state =FALSE;
@@ -398,7 +429,9 @@ int main(/*int argc, char * argv[]*/) {
       break;
 
     default:
+    pthread_mutex_lock(&mux_curses);
       wrefresh(message_win);
+    pthread_mutex_unlock(&mux_curses);
     }
   } while (key != 27);
   close(sock_fd);
