@@ -317,15 +317,12 @@ void movement_message(WINDOW * my_win, message * m) {
   //pthread_mutex_unlock(&mux_curses);
 }
 
-int main(/*int argc, char * argv[]*/) {
-  /*if (argc < 2) {
+int main(int argc, char * argv[]) {
+  if (argc < 2) {
     printf("to run client supply the server adress after ./CLIENT.proj \n");
     exit(0);
-  }*/
-  /*char * adress_keyboard = argv[1];*/
-  char adress_keyboard[50];
-  strcpy(adress_keyboard,"127.0.0.1\0");
-  //adress_keyboard[strlen(adress_keyboard)-1]= '\0';
+  }
+  char * adress_keyboard = argv[1];
   int sock_fd, condition, key = -1;
   int scores[2];      // counts the balls missed and scored troughout all the game(keeps even if released)
   scores[0] = 0;
