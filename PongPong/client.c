@@ -23,8 +23,8 @@ void initialize_ncurses() {
 }
 
 /* creates the 4  used windows and draws a border for each  each window has it's own purpose, see declaration*/
-void create_windows(WINDOW * my_win, WINDOW * message_win, WINDOW * score_win, WINDOW * controls_and_info, pthread_mutex_t mux_curses) {
-  pthread_mutex_lock(&mux_curses);
+void create_windows(WINDOW * my_win, WINDOW * message_win, WINDOW * score_win, WINDOW * controls_and_info) {
+  
   box(my_win, 0, 0);
   wrefresh(my_win);
   keypad(my_win, true);
@@ -39,7 +39,7 @@ void create_windows(WINDOW * my_win, WINDOW * message_win, WINDOW * score_win, W
   mvwprintw(controls_and_info, 3, 1, "Press \tq to leave the game  ");
   mvwprintw(controls_and_info, 4, 1, "Press \tr to release the ball after at least 10 secs ");
   wrefresh(controls_and_info);
-  pthread_mutex_unlock(&mux_curses);   
+   
 }
 
 /*initial paddle position*/
@@ -99,7 +99,6 @@ void move_paddle(paddle_position * paddle, int direction, WINDOW * message_win) 
   wrefresh(message_win);
 }
 
-
 /*moves the ball   simulating bouncing effect on walls*/
 void move_ball(ball_position_t * ball) {
 
@@ -133,7 +132,7 @@ void draw_ball(WINDOW * my_win, ball_position_t * ball, int draw) {
   waddch(my_win, ch);
 }
  /* simulates ball position to check if hitting edges or paddle and bouncing accordingly */
-void simulate_ball_position(paddle_position * paddle, message * m, WINDOW * message_win, int key, int * scores) {
+void simulate_ball_position(paddle_position * paddle, message * m, WINDOW * message_win, int * scores) {
  
   ball_position_t simul_ball;
   simul_ball.c = m -> ball_position.c;
@@ -145,52 +144,24 @@ void simulate_ball_position(paddle_position * paddle, message * m, WINDOW * mess
 
   int condition_1 = (((simul_ball.x <= paddle -> x + paddle -> length) && (simul_ball.x >= paddle -> x - paddle -> length)) );
   if (condition_1 ) {
-    if(paddle -> y == simul_ball.y || paddle->y == m->ball_position.y){
+    if(paddle -> y == simul_ball.y){
       scores[0]++;
       m->point =TRUE;
-    }   
-    if (( m->ball_position.y == paddle -> y)){
-      if ((key =='a' ||key == KEY_LEFT) && (m->ball_position.x == paddle -> x - paddle -> length)){
-        if (m->ball_position.x == 1) {//top
-          if(m->ball_position.y <= WINDOW_SIZE/2)m->ball_position.up_hor_down=1;
-          else m->ball_position.up_hor_down=-1;
-        }
-        else  m->ball_position.left_ver_right =-1;
-      }
-      else if((key =='d' ||key == KEY_RIGHT) && (m->ball_position.x == paddle -> x + paddle -> length)){
-        if( m->ball_position.x == WINDOW_SIZE -3){//bottom
-          if(m->ball_position.y <= WINDOW_SIZE/2)m->ball_position.up_hor_down=1;
-          else m->ball_position.up_hor_down=-1;
-        }
-        else m->ball_position.left_ver_right =1;
-      }
-      else m->ball_position.up_hor_down=-1;
+      if( simul_ball.x == WINDOW_SIZE -2 || simul_ball.x == 1){//left or right
+        if(simul_ball.y <= WINDOW_SIZE/2)m->ball_position.up_hor_down=1;
+        else m->ball_position.up_hor_down=-1;
+        if (simul_ball.x == WINDOW_SIZE -2 ) m->ball_position.left_ver_right =1;
+        else m->ball_position.left_ver_right =-1;
+      } 
+      else  m->ball_position.left_ver_right *=-1;
       m->ball_position.y += m-> ball_position.up_hor_down;
       m->ball_position.x += m-> ball_position.left_ver_right;
     }
-    else if (simul_ball.y == paddle->y){
-      if ((key =='a' ||key == KEY_LEFT) && (simul_ball.x == paddle -> x - paddle -> length)){
-        if (simul_ball.x == 1) {//left
-          if(simul_ball.y <= WINDOW_SIZE/2)m->ball_position.up_hor_down=1;
-          else m->ball_position.up_hor_down=-1;
-        }
-      }
-      else if((key =='d' ||key == KEY_RIGHT) && (simul_ball.x == paddle -> x + paddle -> length)){
-        if( simul_ball.x == WINDOW_SIZE -2){//right
-          if(simul_ball.y <= WINDOW_SIZE/2)m->ball_position.up_hor_down=1;
-          else m->ball_position.up_hor_down=-1;
-        }
-         m->ball_position.left_ver_right =1;
-      }
-      else  m->ball_position.left_ver_right =-1;
-      m->ball_position.y += m-> ball_position.up_hor_down;
-      m->ball_position.x += m-> ball_position.left_ver_right;
-    }
-    if (((paddle -> y == WINDOW_SIZE -3 )&& (key == KEY_DOWN ||key == 's')) && ((simul_ball.y == WINDOW_SIZE -2)||(m ->ball_position.y == WINDOW_SIZE -2))){
+    if ((paddle -> y == WINDOW_SIZE -3 )&& (simul_ball.y == WINDOW_SIZE -2)){
       m -> ball_position.y = WINDOW_SIZE -4;
       m -> ball_position.up_hor_down = -1;
     }
-    else if (((paddle -> y == 2) && (key == KEY_UP || key =='w')) && ((simul_ball.y == 1) ||(m ->ball_position.y ==  1))){
+    else if ((paddle -> y == 2) && (simul_ball.y == 1)){
       m -> ball_position.y = 3;
       m -> ball_position.up_hor_down = 1;
     } 
@@ -228,19 +199,54 @@ void update_scoreboard(int score[], WINDOW * score_win) {
 }
 
 /*updates ball and paddle position*/
-void update_ball_and_paddle(WINDOW * my_win, message * m, paddle_position * paddle, int key, WINDOW * message_win, int * scores) {
+void update_paddle(WINDOW * my_win, paddle_position * paddle, int key, WINDOW * message_win) {
   draw_paddle(my_win, paddle, FALSE); //deletes paddle
   move_paddle(paddle, key, message_win); //calculates new paddle position according to user input
-  draw_ball(my_win, & m -> ball_position, FALSE); //deletes ball  
-  simulate_ball_position(paddle, m, message_win, key, scores); //simulates if ball will hit paddle or not,
   //if it does, changes direction of ball
   draw_paddle(my_win, paddle, TRUE);
-  move_ball( & m -> ball_position);
-  draw_ball(my_win, & m -> ball_position, TRUE);
   wrefresh(my_win);
 } //delete previous ball, calculate new position and draws it 
 
+void * update_ball_thread(void* arg){
+  update_ball_t *update_ball_struct = (update_ball_t*) arg;
+  //update_ball_t *update_ball_struct = malloc(sizeof(*update_ball_t));
+  // malloc
+  here:
+  sleep(1);
+  if (update_ball_struct->play_state == TRUE){
+    pthread_mutex_lock(update_ball_struct->mux_curses);
+    draw_ball(update_ball_struct->my_win, &update_ball_struct->m->ball_position, FALSE); //deletes ball   
+    simulate_ball_position(update_ball_struct->paddle, update_ball_struct->m, update_ball_struct->message_win, update_ball_struct->scores); //simulates if ball will hit paddle or not,
+    move_ball( &update_ball_struct->m->ball_position);
+    draw_ball(update_ball_struct->my_win, &update_ball_struct->m->ball_position, TRUE);
+    pthread_mutex_unlock(update_ball_struct->mux_curses);
+  }
+  else {goto here;}
+  return NULL;
+}
 
+void * quit_func(void* arg){
+  quit_t *quit_struct = (quit_t *) arg;
+  //malloc 
+  int key;
+  pthread_mutex_lock(quit_struct->mux_curses);
+  while((key = wgetch(quit_struct->my_win)) == ERR){
+    if(key == 'q'){ 
+      pthread_mutex_unlock(quit_struct->mux_curses);
+      quit_struct->m->msg_type = 4; // disconnect message
+      sendto(*quit_struct->sock_fd, & quit_struct->m , sizeof(message), 0,
+          (const struct sockaddr * ) & quit_struct->server_addr,  sizeof(quit_struct->server_addr)); //send the move ball message
+      close(*quit_struct->sock_fd);
+      endwin(); // End curses mode
+      exit(0);
+    }
+    else {
+      *quit_struct->key= key;
+      pthread_mutex_unlock(quit_struct->mux_curses);
+      sleep(0.1);}
+  }
+  return NULL;
+}
 
 // if released clears message window 
 void clear_paddle_nd_msg_window(WINDOW * my_win, paddle_position * paddle, WINDOW * message_win) {
@@ -254,22 +260,19 @@ void clear_paddle_nd_msg_window(WINDOW * my_win, paddle_position * paddle, WINDO
 /*routine to start playe state*/
 void start_play_state(WINDOW * my_win, paddle_position * paddle, message * m, WINDOW * message_win) {
   mvwprintw(message_win, 1, 1, "PLAY STATE");
-  if (m -> allow_release) mvwprintw(message_win, 1, 16, "|\tYOU CAN RELEASE");
   draw_paddle(my_win, paddle, TRUE); // draws paddle in the defined position (mode TRUE=draw/ mode FALSE= delete)
   draw_ball(my_win, & m -> ball_position, TRUE);
   wrefresh(my_win);
   wrefresh(message_win);
   m -> point = FALSE;
-  m -> msg_type = 3;
+  //m -> msg_type = 3;
 }
 
 /*routine for success connection*/
-void connect_message(WINDOW * message_win, pthread_mutex_t mux_curses) {
-   pthread_mutex_lock(&mux_curses);
+void connect_message(WINDOW * message_win) {
   mvwprintw(message_win, 1, 1, "SUCESS IN CONNECTION WAIT \0");
   wrefresh(message_win);
   mvwprintw(message_win, 1, 1, "                                        \0");
-  pthread_mutex_unlock(&mux_curses);
 }
 
 
@@ -281,12 +284,15 @@ void movement_message(WINDOW * my_win, message * m) {
   draw_ball(my_win, & m -> ball_position, FALSE);
 }
 
-int main(int argc, char * argv[]) {
-  if (argc < 2) {
+int main(/*int argc, char * argv[]*/) {
+  /*if (argc < 2) {
     printf("to run client supply the server adress after ./CLIENT.proj \n");
     exit(0);
-  }
-  char * adress_keyboard = argv[1];
+  }*/
+  /*char * adress_keyboard = argv[1];*/
+  char adress_keyboard[50];
+  strcpy(adress_keyboard,"127.0.0.1\0");
+  //adress_keyboard[strlen(adress_keyboard)-1]= '\0';
   int sock_fd, condition, key = -1;
   int scores[2];      // counts the balls missed and scored troughout all the game(keeps even if released)
   scores[0] = 0;
@@ -294,10 +300,15 @@ int main(int argc, char * argv[]) {
   message m;
   paddle_position paddle;
   struct sockaddr_in server_addr;
+  bool first_iteration =TRUE;
   criar_socket( & sock_fd);
 
   //define safe thread to use ncurses
-  pthread_mutex_t mux_curses;
+  pthread_mutex_t mux_curses = PTHREAD_MUTEX_INITIALIZER;
+  pthread_t ball_thread,quit_thread;
+  update_ball_t update_ball_struct;
+  quit_t quit_struct;
+ 
 
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(SOCK_PORT);
@@ -322,7 +333,17 @@ int main(int argc, char * argv[]) {
   new_paddle( & paddle, PADLE_SIZE); // initializes all paddle arguments 
   //TODO_9
   // prepare the movement message  
-
+  nodelay(my_win, TRUE);
+  update_ball_struct.m= &m;
+  update_ball_struct.message_win = message_win;
+  update_ball_struct.mux_curses = &mux_curses;
+  update_ball_struct.my_win = my_win;
+  update_ball_struct.paddle = & paddle;
+  update_ball_struct.scores= scores;
+  quit_struct.mux_curses = &mux_curses;
+  update_ball_struct.play_state =FALSE;
+  
+ 
   do {
     recv(sock_fd, & m, sizeof(message), 0);
     if (m.msg_type == 5) {
@@ -333,9 +354,21 @@ int main(int argc, char * argv[]) {
       sleep(5);
       break;
     }
-    create_windows(my_win, message_win, score_win, controls_and_info, mux_curses);
+    if (first_iteration){
+      create_windows(my_win, message_win, score_win, controls_and_info);
+      quit_struct.my_win = my_win;
+      quit_struct.sock_fd = &sock_fd;
+      quit_struct.m =&m;
+      quit_struct.server_addr= &server_addr;
+      quit_struct.key = &key;
+      pthread_create(&quit_thread, NULL, quit_func,(void*)(&quit_struct));
+      pthread_create(&ball_thread, NULL, update_ball_thread, (void *)( &update_ball_struct));
+      first_iteration = FALSE;
+    }
+    
     if (m.msg_type == 0) {
-      connect_message(message_win, mux_curses);
+      connect_message(message_win );
+      update_ball_struct.play_state =FALSE;
       continue;
     }
 
@@ -343,20 +376,16 @@ int main(int argc, char * argv[]) {
     switch (m.msg_type) {
     case 2: // send _ball == playstate
       do {
+        update_ball_struct.play_state = TRUE;
         start_play_state(my_win, & paddle, & m, message_win);
-        key = wgetch(my_win);
+        //newwwww
+    /*need to create the struct to pass all needed info */
+       // pthread_create(&ball_thread, NULL, update_ball_thread, (void *)( &update_ball_struct));
+        m.msg_type =3;
+        //key = wgetch(my_win);
         condition = (key == KEY_LEFT || KEY_RIGHT || KEY_UP || KEY_DOWN || 'a' || 's' || 'd' || 'w');
-        if (key == 'q') {
-          m.msg_type = 4; // disconnect message
-          sendto(sock_fd, & m, sizeof(message), 0,
-            (const struct sockaddr * ) & server_addr, sizeof(server_addr));
-          close(sock_fd);
-          endwin(); // End curses mode	
-          return 0;
-        } else if (key == 'r' && m.allow_release) {
-          m.msg_type = 1; // release message
-          clear_paddle_nd_msg_window(my_win, & paddle, message_win);
-        } else if (condition) update_ball_and_paddle(my_win, & m, & paddle, key, message_win, scores);
+        if (condition) update_paddle(my_win, & paddle, key, message_win);
+        key = 0;
       } while ((!(condition)) && (m.msg_type != 1));
 
       sendto(sock_fd, & m, sizeof(message), 0,
@@ -364,6 +393,7 @@ int main(int argc, char * argv[]) {
       wrefresh(message_win);
       break;
     case 3: //move_ball
+      update_ball_struct.play_state =FALSE;
       movement_message(my_win, & m);
       break;
 

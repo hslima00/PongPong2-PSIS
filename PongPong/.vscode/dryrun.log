@@ -1,4 +1,4 @@
-make --dry-run --keep-going --print-directory
+make default --dry-run --always-make --keep-going --print-directory
 make: Entering directory '/home/PongPong2/PongPong'
 gcc -g -Wall -pedantic -Wextra -c server.c -o server.o -lcurses -lncurses -lpthread
 gcc -g  -Wall -pedantic -Wextra -o SERVER.proj  server.o  -lcurses -lncurses -lpthread

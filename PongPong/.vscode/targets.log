@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Tue Feb  1 20:45:10 2022
+# Make data base, printed on Thu Feb  3 18:47:15 2022
 
 # Variables
 
@@ -63,7 +63,7 @@ C_TRASH = *.o *.so
 # environment
 VSCODE_LOG_STACK = false
 # environment
-VSCODE_IPC_HOOK_CLI = /mnt/wslg/runtime-dir/vscode-ipc-7ba7439b-2e4c-44b9-af04-13398b3ea770.sock
+VSCODE_IPC_HOOK_CLI = /mnt/wslg/runtime-dir/vscode-ipc-610adec6-1033-4f08-bbbd-5068aae3bb84.sock
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -83,7 +83,7 @@ MODE = -g
 # default
 .LOADED := 
 # environment
-WSL_INTEROP = /run/WSL/2449_interop
+WSL_INTEROP = /run/WSL/12_interop
 # environment
 PULSE_SERVER = /mnt/wslg/PulseServer
 # makefile (from 'Makefile', line 28)
@@ -233,9 +233,6 @@ client: CLIENT
 #  File has not been updated.
 
 .PHONY: default server SERVER CLIENT client cleanall
- 
-make: *** No rule to make target 'all'.  Stop.
- 
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -243,7 +240,7 @@ make: *** No rule to make target 'all'.  Stop.
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-02-01 20:45:06.1352053
+#  Last modified 2022-02-03 01:16:48.3371286
 #  File has been updated.
 #  Successfully updated.
 
@@ -279,6 +276,9 @@ SERVER.proj: server.o
 #  recipe to execute (from 'Makefile', line 46):
 	$(CC) $(MODE)  $(CFLAGS) -o $@  $(SERVER_OBJS) -lcurses -lncurses -lpthread
 
+ 
+make: *** No rule to make target 'all'.  Stop.
+ 
 CLIENT: CLIENT.proj
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
@@ -331,6 +331,6 @@ cleanall: clean cleanExe
 # strcache performance: lookups = 69 / hit rate = 59%
 # hash-table stats:
 # Load=28/8192=0%, Rehash=0, Collisions=1/69=1%
-# Finished Make data base on Tue Feb  1 20:45:10 2022
+# Finished Make data base on Thu Feb  3 18:47:15 2022
 
  

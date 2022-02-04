@@ -56,7 +56,6 @@ sets the release condition FALSE*/
 void first_client_routine(message * m, int * active_client, int * check_for_new_client) {
     init_score(m -> score); 
     place_ball_random( & m -> ball_position); 
-    m -> allow_release = FALSE;
     m -> point = TRUE; 
     m -> msg_type = 2; //send _ball
     * active_client = 0;
@@ -74,6 +73,8 @@ int main() {
     struct sockaddr_in client_addr;                     //Struct containing the data from client adress
     message m;                                                              //Message sent/received to/for client
     
+    pthread_t player_changer_thread;
+    player_changer_t player_changer_struct;
     time_t start, end;                                                     //Time control var
     int timer;                                                              //Time control var
     client_addr_t clients_data[MAX_CLIENTS];                           //Array of structures that save the client data
@@ -128,7 +129,7 @@ int main() {
             if (active_client + 1 == client)   //
                 active_client = -1;            //
             active_client++;                   //
-            m.allow_release = FALSE;           //
+           // m.allow_release = FALSE;           //
             time( & start);                    //
             m.msg_type = 2;                    //next client enters Play State
             //Send Ball
@@ -141,7 +142,7 @@ int main() {
             //Updates ball position to all clients that aren't in Play State
             if (m.point)
                 m.score[active_client]++;
-            m.allow_release = FALSE;
+           // m.allow_release = FALSE;
             while (check_for_new_client != client) {
                 m.score[check_for_new_client] = 0;
                 check_for_new_client++;
@@ -157,10 +158,11 @@ int main() {
             m.msg_type = 2;
             time( & end);
             timer = difftime(end, start);
-            if (timer >= 10) m.allow_release = TRUE;
+           // if (timer >= 10) m.allow_release = TRUE;
             inet_pton( AF_INET ,clients_data[active_client].addr, &client_addr.sin_addr );
 		    client_addr.sin_port = htons(clients_data[active_client].port);
             sendto(sock_fd, & m, sizeof(m), 0, (const struct sockaddr * ) & client_addr, client_addr_size);
+            
             break;
         case 4: //Client Disconnect
             if (active_client+1 != client){

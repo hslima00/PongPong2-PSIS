@@ -1,3 +1,10 @@
 {
-    "C_Cpp.errorSquiggles": "Enabled"
+    "C_Cpp.errorSquiggles": "Enabled",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/PongPong2/PongPong",
+            "binaryPath": "/home/PongPong2/PongPong/CLIENT.proj",
+            "binaryArgs": []
+        }
+    ]
 }
