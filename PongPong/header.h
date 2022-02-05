@@ -12,6 +12,7 @@
 #include <time.h>
 #include <pthread.h>
 
+#define N_THREADS 6
 #define SOCK_PORT 6969
 #define MAX_CLIENTS 3
 #define WINDOW_SIZE 30
@@ -44,24 +45,6 @@ typedef struct client_addr_t{
     int port;
 }client_addr_t;
 
-typedef struct update_ball_t{
-    message * m;
-    WINDOW * my_win;
-    WINDOW * message_win;
-    paddle_position *paddle; //= &paddle
-    bool play_state;
-    int *scores; //= int * scores 
-    //pthread_mutex_t * mux_curses;
-}update_ball_t;
-
-typedef struct quit_t{ 
-    message * m;
-    struct sockaddr_in*  server_addr; 
-    WINDOW * my_win;
-    int * sock_fd;
-    int * key;
-    //pthread_mutex_t * mux_curses;
-}quit_t;
 
 typedef struct player_changer_t{
     message * m;
@@ -69,5 +52,29 @@ typedef struct player_changer_t{
     int* active_client;
     int* client;
 }player_changer_t;
-// ver como para o thread de maneira bonita kinda (tenho que tentar meter malloc and free dentro do thread vs alocar permanentemente como está )
-//https://stackoverflow.com/questions/18826853/how-to-stop-a-running-pthread-thread#:~:text=You%20can%20simply%20call%20pthread_cancel,pthread_kill%20to%20stop%2Frestart%20it.
+
+typedef struct client_struct_t{
+    int* client_fd;
+    int* key;
+}client_struct_t;
+
+typedef struct update_ball_t{
+    message * m;
+    paddle_position *paddle; //= &paddle
+    bool* play_state;
+    bool* move_ball; 
+    struct sockaddr_in* client_addr;
+	socklen_t *size_addr;
+    int *scores;
+
+}update_ball_t;
+
+typedef struct communication_t{
+    bool* move_ball; 
+    int* key;
+    message * m;
+    char * adress_keyboard;
+    paddle_position* paddle;
+    bool* play_state;
+    update_ball_t* update_ball_thread;
+}communication_t;
